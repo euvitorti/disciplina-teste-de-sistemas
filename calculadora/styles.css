@@ -1,75 +1,204 @@
+:root {
+  --bg: #f0f0f0;
+  --fg: #333;
+  --panel-bg: #fff;
+  --btn-bg: #f4f4f4;
+  --btn-hover: #e0e0e0;
+  --err: #e74c3c;
+  --primary: #3498db;
+}
+
+body.dark {
+  --bg: #2b2b2b;
+  --fg: #ddd;
+  --panel-bg: #3b3b3b;
+  --btn-bg: #4b4b4b;
+  --btn-hover: #5b5b5b;
+  --err: #ff6b6b;
+}
+
 body {
-  font-family: Arial, sans-serif;
-  background: #f0f0f0;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
-  height: 100vh;
+  align-items: center;
+  min-height: 100vh;
   margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Segoe UI", sans-serif; /* Escolhi uma fonte mais moderna */
+  padding: 10px;
+  box-sizing: border-box;
 }
 
-.calculator {
-  background: #fff;
+/* Topo da aplicação */
+.top-bar {
+  width: 100%;
+  max-width: 800px; /* Dei mais espaço */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: var(--panel-bg);
+  border-radius: 10px 10px 0 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* Responsável por manter o conteúdo organizado no centro */
+.container {
+  display: flex;
+  flex-wrap: wrap; /* Agora se adapta em telas pequenas */
+  justify-content: center;
+  align-items: flex-start;
+  gap: 20px;
+  max-width: 800px;
   padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  width: 260px;
+  box-sizing: border-box;
 }
 
+/* Área principal da calculadora */
+.calculator,
+.sidebar {
+  background: var(--panel-bg);
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  padding: 20px;
+}
+
+/* A calculadora ficou um pouco maior e com aparência mais limpa */
+.calculator {
+  flex: 1;
+  min-width: 280px;
+}
+
+/* Estilo da tela onde os números aparecem */
 #display {
   width: 100%;
-  height: 50px;
-  font-size: 1.8em;
+  height: 60px;
+  font-size: 2em;
   text-align: right;
-  padding: 5px 10px;
-  box-sizing: border-box;
+  padding: 10px;
   border: 2px solid #ccc;
-  border-radius: 5px;
+  border-radius: 10px;
+  background: var(--panel-bg);
+  color: var(--fg);
+  box-sizing: border-box;
 }
 
+/* Quando der erro, eu pinto a borda */
 #display.error {
-  border-color: #e74c3c;
+  border-color: var(--err);
 }
 
 .error-message {
   height: 20px;
-  color: #e74c3c;
+  color: var(--err);
   font-size: 0.9em;
   margin-top: 5px;
   text-align: right;
 }
 
+/* Grade dos botões da calculadora */
 .buttons {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-top: 15px;
+  gap: 12px;
+  margin-top: 20px;
 }
 
+/* Todos os botões da calculadora */
 button {
-  font-size: 1.3em;
+  font-size: 1.2em;
   padding: 15px;
   border: none;
-  background: #f4f4f4;
-  border-radius: 5px;
+  background: var(--btn-bg);
+  border-radius: 10px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s ease;
+  color: var(--fg);
 }
 
 button:hover {
-  background: #e0e0e0;
+  background: var(--btn-hover);
 }
 
 button:active {
-  background: #ccc;
+  opacity: 0.85;
 }
 
-button.wide {
-  grid-column: span 4;
-  background: #e74c3c;
-  color: white;
+/* Painel lateral com explicações e histórico */
+.sidebar {
+  flex: 1;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
 }
 
-button.wide:hover {
-  background: #cf3e2f;
+/* Listas do banner */
+.banner ol,
+.banner ul {
+  margin: 5px 0 15px 20px;
+}
+
+.banner .examples button {
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  font-size: 1em;
+}
+
+/* Área do histórico */
+.history {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.history h3 {
+  margin: 0 0 10px;
+}
+
+#history-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Cada item do histórico */
+#history-list li {
+  padding: 6px 0;
+  border-bottom: 1px solid #ccc;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#history-list li button {
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+/* Responsivo para telas pequenas */
+@media (max-width: 600px) {
+  .top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .calculator,
+  .sidebar {
+    width: 100%;
+  }
 }

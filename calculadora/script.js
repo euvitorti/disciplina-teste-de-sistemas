@@ -1,108 +1,154 @@
 const display = document.getElementById('display');
 const errorMessage = document.getElementById('error-message');
+const historyList = document.getElementById('history-list');
+const parenCountEl = document.getElementById('paren-count');
+const themeToggle = document.getElementById('theme-toggle');
 
-// -----------------
-//  Funções básicas
-// -----------------
+// Inicia tema
+if (localStorage.getItem('theme') === 'dark') {
+  document.body.classList.add('dark');
+  themeToggle.textContent = 'Modo Claro';
+}
 
+// Toggler de tema
+themeToggle.addEventListener('click', () => {
+  document.body.classList.toggle('dark');
+  const tema = document.body.classList.contains('dark') ? 'dark' : 'light';
+  themeToggle.textContent = tema === 'dark' ? 'Modo Claro' : 'Modo Escuro';
+  localStorage.setItem('theme', tema);
+});
+
+// Carrega e exibe histórico
+let history = JSON.parse(localStorage.getItem('calcHistory') || '[]');
+function renderHistory() {
+  historyList.innerHTML = '';
+  history.forEach(({ expr, result }) => {
+    const li = document.createElement('li');
+    const span = document.createElement('span');
+    span.textContent = `${expr} = ${result}`;
+    const btn = document.createElement('button');
+    btn.textContent = '↺';
+    btn.title = 'Recarregar';
+    btn.onclick = () => {
+      display.value = expr;
+      clearError();
+      updateParenCount();
+    };
+    li.append(span, btn);
+    historyList.append(li);
+  });
+}
+renderHistory();
+
+// Atualiza contador de parênteses
+function updateParenCount() {
+  const open = (display.value.match(/\(/g) || []).length;
+  const close = (display.value.match(/\)/g) || []).length;
+  parenCountEl.textContent = `Parênteses abertos: ${open - close}`;
+  if (open < close) showError('Parênteses desequilibrados');
+}
+display.addEventListener('input', () => {
+  clearError();
+  updateParenCount();
+});
+
+// Manipulação do display
 function appendToDisplay(char) {
   clearError();
-  // Evita operadores duplicados no fim
   const lastChar = display.value.slice(-1);
   if (/[+\-*/.]/.test(lastChar) && /[+\-*/.]/.test(char)) {
     showError('Operador inválido');
     return;
   }
-  // Evita múltiplos pontos no mesmo número
-  if (char === '.' && /(\d*\.\d*)$/.test(display.value)) {
+  if (char === '.' && /(?:\d*\.\d*)$/.test(display.value)) {
     showError('Já existe ponto decimal');
     return;
   }
   display.value += char;
+  updateParenCount();
 }
-
+function deleteLast() {
+  clearError();
+  display.value = display.value.slice(0, -1);
+  updateParenCount();
+}
 function clearDisplay() {
   display.value = '';
   clearError();
+  updateParenCount();
 }
 
-// ---------------------
-//  Cálculo e validação
-// ---------------------
-
+// Cálculo e validações
 function calculateResult() {
   clearError();
   const expr = display.value.trim();
-
   if (!expr) {
     showError('Digite algo');
     return;
   }
-
-  // Validação geral (só dígitos, espaços, operadores e parênteses)
   if (!/^[0-9+\-*/().\s]+$/.test(expr)) {
     showError('Expressão inválida');
     return;
   }
-
-  // Detecta divisão por zero no texto (ex.: “/0” ou “/  00.0”)
-  if (/\/\s*0+(\D|$)/.test(expr)) {
+  if (/\/\s*0+(?:\D|$)/.test(expr)) {
     showError('Divisão por zero!');
     return;
   }
-
+  const open = (expr.match(/\(/g) || []).length;
+  const close = (expr.match(/\)/g) || []).length;
+  if (open !== close) {
+    showError('Parênteses desequilibrados');
+    return;
+  }
   try {
-    // calcula com Function() em vez de eval
     const result = new Function('return ' + expr)();
-    if (!isFinite(result)) throw new Error('Resultado infinito');
+    if (!isFinite(result)) throw new Error();
     display.value = result;
-  } catch (e) {
+    history.unshift({ expr, result });
+    history = history.slice(0, 20);
+    localStorage.setItem('calcHistory', JSON.stringify(history));
+    renderHistory();
+    updateParenCount();
+  } catch {
     showError('Erro no cálculo');
   }
 }
 
-// ---------------------
-//   Tratamento de erros
-// ---------------------
+// Exemplos carregáveis
+function loadExample(expr) {
+  clearError();
+  display.value = expr;
+  updateParenCount();
+}
 
+// Funções de erro
 function showError(msg) {
   display.classList.add('error');
   errorMessage.textContent = msg;
-  // remove o erro após 1.5s
   setTimeout(clearError, 1500);
 }
-
 function clearError() {
   display.classList.remove('error');
   errorMessage.textContent = '';
 }
 
-// ---------------------
 // Atalhos de teclado
-// ---------------------
-
 display.addEventListener('keydown', (e) => {
   const allowed = '0123456789+-*/().';
-  // Enter = calcula
   if (e.key === 'Enter') {
     e.preventDefault();
     calculateResult();
     return;
   }
-  // Backspace, Delete, setas = ok
   if (['Backspace','Delete','ArrowLeft','ArrowRight'].includes(e.key)) {
     clearError();
     return;
   }
-  // se for permitido, ok
   if (allowed.includes(e.key)) {
     clearError();
-    // tratar ponto extra e operadores duplicados
-    if (e.key === '.') {
-      if (/(\d*\.\d*)$/.test(display.value)) {
-        e.preventDefault();
-        showError('Já existe ponto decimal');
-      }
+    if (e.key === '.' && /(?:\d*\.\d*)$/.test(display.value)) {
+      e.preventDefault();
+      showError('Já existe ponto decimal');
     }
     const last = display.value.slice(-1);
     if (/[+\-*/.]/.test(last) && /[+\-*/.]/.test(e.key)) {
@@ -111,12 +157,11 @@ display.addEventListener('keydown', (e) => {
     }
     return;
   }
-  // bloqueia letras/outros
   e.preventDefault();
   showError('Somente números e operadores');
 });
 
-// Impede colar texto inválido
+// Bloqueio de colagem inválida
 display.addEventListener('paste', (e) => {
   const paste = (e.clipboardData || window.clipboardData).getData('text');
   if (!/^[0-9+\-*/().\s]+$/.test(paste)) {
